@@ -1,0 +1,11 @@
+apiVersion: vpc.volcengine-terraform.crossplane.io/v1alpha1
+kind: VPC
+metadata:
+  name: demo-vpc
+spec:
+  forProvider:
+    description: "Managed with Crossplane."
+    cidrBlock: 192.168.0.0/16
+    vpcName: crossplane-demo
+  providerConfigRef:
+    name: default
