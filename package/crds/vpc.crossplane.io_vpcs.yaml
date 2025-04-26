@@ -4,18 +4,18 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: resources.null.volcengine-terraform.upbound.io
+  name: vpcs.vpc.crossplane.io
 spec:
-  group: null.volcengine-terraform.upbound.io
+  group: vpc.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - volcengine-terraform
-    kind: Resource
-    listKind: ResourceList
-    plural: resources
-    singular: resource
+    kind: VPC
+    listKind: VPCList
+    plural: vpcs
+    singular: vpc
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -34,10 +34,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Resource is the Schema for the Resources API. The null_resource
-          resource implements the standard resource lifecycle but takes no further
-          action.hashicorp. The triggers argument allows specifying an arbitrary set
-          of values that, when changed, will cause the resource to be replaced.
+        description: VPC is the Schema for the VPCs API. Provides a resource to manage
+          vpc
         properties:
           apiVersion:
             description: |-
@@ -57,7 +55,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ResourceSpec defines the desired state of Resource
+            description: VPCSpec defines the desired state of VPC
             properties:
               deletionPolicy:
                 default: Delete
@@ -75,14 +73,60 @@ spec:
                 type: string
               forProvider:
                 properties:
-                  triggers:
-                    additionalProperties:
-                      type: string
+                  cidrBlock:
                     description: |-
-                      running any associated provisioners.
-                      A map of arbitrary strings that, when changed, will force the null resource to be replaced, re-running any associated provisioners.
-                    type: object
-                    x-kubernetes-map-type: granular
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                    type: string
+                  description:
+                    description: |-
+                      The description of the VPC.
+                      The description of the VPC.
+                    type: string
+                  dnsServers:
+                    description: |-
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  enableIpv6:
+                    description: |-
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                    type: boolean
+                  ipv6CidrBlock:
+                    description: |-
+                      The IPv6 CIDR block of the VPC.
+                      The IPv6 CIDR block of the VPC.
+                    type: string
+                  projectName:
+                    description: |-
+                      The ProjectName of the VPC.
+                      The ProjectName of the VPC.
+                    type: string
+                  tags:
+                    description: Tags.
+                    items:
+                      properties:
+                        key:
+                          description: |-
+                            The Key of Tags.
+                            The Key of Tags.
+                          type: string
+                        value:
+                          description: |-
+                            The Value of Tags.
+                            The Value of Tags.
+                          type: string
+                      type: object
+                    type: array
+                  vpcName:
+                    description: |-
+                      The name of the VPC.
+                      The name of the VPC.
+                    type: string
                 type: object
               initProvider:
                 description: |-
@@ -97,14 +141,60 @@ spec:
                   for example because of an external controller is managing them, like an
                   autoscaler.
                 properties:
-                  triggers:
-                    additionalProperties:
-                      type: string
+                  cidrBlock:
                     description: |-
-                      running any associated provisioners.
-                      A map of arbitrary strings that, when changed, will force the null resource to be replaced, re-running any associated provisioners.
-                    type: object
-                    x-kubernetes-map-type: granular
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                    type: string
+                  description:
+                    description: |-
+                      The description of the VPC.
+                      The description of the VPC.
+                    type: string
+                  dnsServers:
+                    description: |-
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  enableIpv6:
+                    description: |-
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                    type: boolean
+                  ipv6CidrBlock:
+                    description: |-
+                      The IPv6 CIDR block of the VPC.
+                      The IPv6 CIDR block of the VPC.
+                    type: string
+                  projectName:
+                    description: |-
+                      The ProjectName of the VPC.
+                      The ProjectName of the VPC.
+                    type: string
+                  tags:
+                    description: Tags.
+                    items:
+                      properties:
+                        key:
+                          description: |-
+                            The Key of Tags.
+                            The Key of Tags.
+                          type: string
+                        value:
+                          description: |-
+                            The Value of Tags.
+                            The Value of Tags.
+                          type: string
+                      type: object
+                    type: array
+                  vpcName:
+                    description: |-
+                      The name of the VPC.
+                      The name of the VPC.
+                    type: string
                 type: object
               managementPolicies:
                 default:
@@ -273,23 +363,155 @@ spec:
             required:
             - forProvider
             type: object
+            x-kubernetes-validations:
+            - message: spec.forProvider.cidrBlock is a required parameter
+              rule: '!(''*'' in self.managementPolicies || ''Create'' in self.managementPolicies
+                || ''Update'' in self.managementPolicies) || has(self.forProvider.cidrBlock)
+                || (has(self.initProvider) && has(self.initProvider.cidrBlock))'
           status:
-            description: ResourceStatus defines the observed state of Resource.
+            description: VPCStatus defines the observed state of VPC.
             properties:
               atProvider:
                 properties:
-                  id:
-                    description: (String) This is set to a random value at create
-                      time.
-                    type: string
-                  triggers:
-                    additionalProperties:
-                      type: string
+                  accountId:
                     description: |-
-                      running any associated provisioners.
-                      A map of arbitrary strings that, when changed, will force the null resource to be replaced, re-running any associated provisioners.
-                    type: object
-                    x-kubernetes-map-type: granular
+                      The account ID of VPC.
+                      The account ID of VPC.
+                    type: string
+                  associateCens:
+                    description: |-
+                      The associate cen list of VPC.
+                      The associate cen list of VPC.
+                    items:
+                      properties:
+                        cenId:
+                          description: The ID of CEN.
+                          type: string
+                        cenOwnerId:
+                          description: The owner ID of CEN.
+                          type: string
+                        cenStatus:
+                          description: The status of CEN.
+                          type: string
+                      type: object
+                    type: array
+                  auxiliaryCidrBlocks:
+                    description: |-
+                      The auxiliary cidr block list of VPC.
+                      The auxiliary cidr block list of VPC.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  cidrBlock:
+                    description: |-
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                      A network address block which should be a subnet of the three internal network segments (10.0.0.0/16, 172.16.0.0/12 and 192.168.0.0/16).
+                    type: string
+                  creationTime:
+                    description: |-
+                      Creation time of VPC.
+                      Creation time of VPC.
+                    type: string
+                  description:
+                    description: |-
+                      The description of the VPC.
+                      The description of the VPC.
+                    type: string
+                  dnsServers:
+                    description: |-
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                      The DNS server list of the VPC. And you can specify 0 to 5 servers to this list.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  enableIpv6:
+                    description: |-
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                      Specifies whether to enable the IPv6 CIDR block of the VPC.
+                    type: boolean
+                  id:
+                    description: ID of the resource.
+                    type: string
+                  ipv6CidrBlock:
+                    description: |-
+                      The IPv6 CIDR block of the VPC.
+                      The IPv6 CIDR block of the VPC.
+                    type: string
+                  natGatewayIds:
+                    description: |-
+                      The nat gateway ID list of VPC.
+                      The nat gateway ID list of VPC.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  projectName:
+                    description: |-
+                      The ProjectName of the VPC.
+                      The ProjectName of the VPC.
+                    type: string
+                  routeTableIds:
+                    description: |-
+                      The route table ID list of VPC.
+                      The route table ID list of VPC.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  securityGroupIds:
+                    description: |-
+                      The security group ID list of VPC.
+                      The security group ID list of VPC.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  status:
+                    description: |-
+                      Status of VPC.
+                      Status of VPC.
+                    type: string
+                  subnetIds:
+                    description: |-
+                      The subnet ID list of VPC.
+                      The subnet ID list of VPC.
+                    items:
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: set
+                  tags:
+                    description: Tags.
+                    items:
+                      properties:
+                        key:
+                          description: |-
+                            The Key of Tags.
+                            The Key of Tags.
+                          type: string
+                        value:
+                          description: |-
+                            The Value of Tags.
+                            The Value of Tags.
+                          type: string
+                      type: object
+                    type: array
+                  updateTime:
+                    description: |-
+                      The update time of VPC.
+                      The update time of VPC.
+                    type: string
+                  vpcId:
+                    description: |-
+                      The ID of VPC.
+                      The ID of VPC.
+                    type: string
+                  vpcName:
+                    description: |-
+                      The name of the VPC.
+                      The name of the VPC.
+                    type: string
                 type: object
               conditions:
                 description: Conditions of the resource.

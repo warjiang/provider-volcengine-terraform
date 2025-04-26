@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: providerconfigusages.volcengine-terraform.upbound.io
+  name: providerconfigusages.volcengine-terraform.crossplane.io
 spec:
-  group: volcengine-terraform.upbound.io
+  group: volcengine-terraform.crossplane.io
   names:
     categories:
     - crossplane

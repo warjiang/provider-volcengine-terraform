@@ -1,0 +1,16 @@
+apiVersion: vpc.crossplane.io/v1alpha1
+kind: VPC
+metadata:
+  annotations:
+    meta.upbound.io/example-id: vpc/v1alpha1/vpc
+  labels:
+    testing.upbound.io/example-name: foo
+  name: foo
+spec:
+  forProvider:
+    cidrBlock: 172.16.0.0/16
+    dnsServers:
+    - 8.8.8.8
+    - 114.114.114.114
+    projectName: AS_test
+    vpcName: tf-project-1
