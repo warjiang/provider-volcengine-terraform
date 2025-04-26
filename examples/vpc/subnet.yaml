@@ -1,0 +1,14 @@
+apiVersion: vpc.volcengine.upbound.io/v1alpha1
+kind: Subnet
+metadata:
+  name: demo-subnet
+spec:
+  forProvider:
+    description: "Managed with Crossplane."
+    cidrBlock: 192.168.1.0/24
+    subnetName: crossplane-subnet-1
+    zoneId: cn-beijing-a
+    vpcIdRef:
+      name: demo-vpc
+  providerConfigRef:
+    name: default
