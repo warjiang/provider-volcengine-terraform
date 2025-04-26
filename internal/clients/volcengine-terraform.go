@@ -27,6 +27,12 @@ const (
 	errUnmarshalCredentials = "cannot unmarshal volcengine-terraform credentials as JSON"
 )
 
+const (
+	keyAccessKey = "access_key"
+	keySecretKey = "secret_key"
+	keyRegion    = "region"
+)
+
 // TerraformSetupBuilder builds Terraform a terraform.SetupFn function which
 // returns Terraform provider setup configuration
 func TerraformSetupBuilder(version, providerSource, providerVersion string) terraform.SetupFn {
@@ -63,10 +69,15 @@ func TerraformSetupBuilder(version, providerSource, providerVersion string) terr
 		}
 
 		// Set credentials in Terraform provider configuration.
-		/*ps.Configuration = map[string]any{
-			"username": creds["username"],
-			"password": creds["password"],
-		}*/
+		if v, ok := creds[keyAccessKey]; ok {
+			ps.Configuration[keyAccessKey] = v
+		}
+		if v, ok := creds[keySecretKey]; ok {
+			ps.Configuration[keySecretKey] = v
+		}
+		if v, ok := creds[keyRegion]; ok {
+			ps.Configuration[keyRegion] = v
+		}
 		return ps, nil
 	}
 }
