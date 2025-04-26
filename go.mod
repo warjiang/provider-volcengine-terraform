@@ -1,4 +1,4 @@
-module github.com/upbound/upjet-provider-template
+module github.com/warjiang/provider-volcengine-terraform
 
 go 1.21
 

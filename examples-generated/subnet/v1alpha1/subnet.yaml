@@ -1,0 +1,16 @@
+apiVersion: subnet.volcengine-terraform.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  annotations:
+    meta.upbound.io/example-id: subnet/v1alpha1/subnet
+  labels:
+    testing.upbound.io/example-name: foo
+  name: foo
+spec:
+  forProvider:
+    cidrBlock: 192.168.1.0/24
+    subnetName: subnet-test-2
+    vpcIdSelector:
+      matchLabels:
+        testing.upbound.io/example-name: example
+    zoneId: cn-beijing
