@@ -14,7 +14,7 @@ export TERRAFORM_PROVIDER_SOURCE ?= volcengine/volcengine
 export TERRAFORM_PROVIDER_REPO ?= https://github.com/volcengine/terraform-provider-volcengine
 export TERRAFORM_PROVIDER_VERSION ?= 0.0.164
 export TERRAFORM_PROVIDER_DOWNLOAD_NAME ?= terraform-provider-volcengine
-export TERRAFORM_PROVIDER_DOWNLOAD_URL_PREFIX ?= https://releases.hashicorp.com/$(TERRAFORM_PROVIDER_DOWNLOAD_NAME)/$(TERRAFORM_PROVIDER_VERSION)
+export TERRAFORM_PROVIDER_DOWNLOAD_URL_PREFIX ?= https://github.com/volcengine/terraform-provider-volcengine/releases/download
 export TERRAFORM_NATIVE_PROVIDER_BINARY ?= terraform-provider-volcengine_v0.0.164
 export TERRAFORM_DOCS_PATH ?= website/docs/r
 
