@@ -13,7 +13,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "volcengine-terraform.volcengine-terraform.crossplane.io"
+	Group   = "volcengine-terraform.crossplane.io"
 	Version = "v1beta1"
 )
 
