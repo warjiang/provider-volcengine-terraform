@@ -11,8 +11,8 @@ on:
         required: true
 
 jobs:
-  permissions: write-all
   tag:
+    permissions: write-all
     uses: upbound/official-providers-ci/.github/workflows/provider-tag.yml@standard-runners
     with:
       version: ${{ github.event.inputs.version }}
