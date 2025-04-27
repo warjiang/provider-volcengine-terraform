@@ -263,13 +263,19 @@ jobs:
           version: ${{ env.DOCKER_BUILDX_VERSION }}
           install: true
 
-      - name: Login to Upbound
-        uses: docker/login-action@v3
-        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+#      - name: Login to Upbound
+#        uses: docker/login-action@v3
+#        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+#        with:
+#          registry: xpkg.upbound.io
+#          username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+#          password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+      - name: Install and login with up
+        uses: upbound/action-up@v1
         with:
-          registry: xpkg.upbound.io
-          username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
-          password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+          api-token: ${{ secrets.UP_API_TOKEN }}
+          organization: warjiang
+
 
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
@@ -318,6 +324,12 @@ jobs:
           name: output
           path: _output/**
 
-      - name: Publish Artifacts
-        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
-        run: make publish BRANCH_NAME=${GITHUB_REF##*/}
+      - name: Build and Push Upbound project
+        uses: upbound/action-up-project@v1
+        with:
+          push-project: true
+
+
+#      - name: Publish Artifacts
+#        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+#        run: make publish BRANCH_NAME=${GITHUB_REF##*/}
