@@ -319,15 +319,15 @@ jobs:
           # builds by default. Specifying --load does so.
           BUILD_ARGS: "--load"
 
-      - name: Upload Artifacts to GitHub
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4
-        with:
-          name: output
-          path: _output/**
-
-      - name: Publish Artifacts to GitHub
-        run: |-
-          make -j2 XPKG_REG_ORGS="${{ env.CROSSPLANE_REGORG }}" XPKG_REG_ORGS_NO_PROMOTE="${{ env.CROSSPLANE_REGORG }}" BRANCH_NAME="main" ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} publish
+#      - name: Upload Artifacts to GitHub
+#        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4
+#        with:
+#          name: output
+#          path: _output/**
+#
+#      - name: Publish Artifacts to GitHub
+#        run: |-
+#          make -j2 XPKG_REG_ORGS="${{ env.CROSSPLANE_REGORG }}" XPKG_REG_ORGS_NO_PROMOTE="${{ env.CROSSPLANE_REGORG }}" BRANCH_NAME="main" ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} publish
 
       - name: Publish Artifacts Upbound
         if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
