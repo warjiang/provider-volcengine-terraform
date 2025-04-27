@@ -11,5 +11,6 @@ on:
   # See also commands.yml for the /backport triggered variant of this workflow.
 
 jobs:
+  permissions: write-all
   backport:
     uses: upbound/official-providers-ci/.github/workflows/provider-backport.yml@standard-runners
