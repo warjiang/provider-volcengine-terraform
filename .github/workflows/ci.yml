@@ -6,57 +6,79 @@ on:
       - main
       - release-*
   pull_request: {}
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version string to use while publishing the package (e.g. v1.0.0-alpha.1)"
-        default: ''
-        required: false
+  workflow_dispatch: {}
 
 env:
   # Common versions
   GO_VERSION: '1.21'
   GOLANGCI_VERSION: 'v1.54.0'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
-  XPKG_ACCESS_ID: ${{ secrets.XPKG_ACCESS_ID }}
-  CROSSPLANE_REGORG: 'ghcr.io/warjiang'
-  UPBOUND_REGORG: 'xpkg.upbound.io/warjiang'
-  PROVIDER_REPO: provider-volcengine-terraform
-  UP_DOMAIN: "https://upbound.io"
+
+  # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
+  # step 'if env.XXX != ""', so we copy these to succinctly test whether
+  # credentials have been provided before trying to run steps that need them.
+  UPBOUND_MARKETPLACE_PUSH_ROBOT_USR: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
 
 jobs:
   detect-noop:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       noop: ${{ steps.noop.outputs.should_skip }}
     steps:
       - name: Detect No-op Changes
         id: noop
-        uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
+        uses: fkirc/skip-duplicate-actions@v5.3.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           paths_ignore: '["**.md", "**.png", "**.jpg"]'
           do_not_skip: '["workflow_dispatch", "schedule", "push"]'
 
+  report-breaking-changes:
+    runs-on: ubuntu-24.04
+    needs: detect-noop
+    if: needs.detect-noop.outputs.noop != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        with:
+          submodules: true
+
+      - name: Get modified CRDs
+        id: modified-crds
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            package/crds/**
+      - name: Report breaking CRD OpenAPI v3 schema changes
+        if: steps.modified-crds.outputs.any_changed == 'true'
+        env:
+          MODIFIED_CRD_LIST: ${{ steps.modified-crds.outputs.all_changed_files }}
+        run: |
+          make crddiff
+      - name: Report native schema version changes
+        if: ${{ inputs.upjet-based-provider }}
+        run: |
+          make schema-version-diff
+
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
         id: go
-        run: echo "::set-output name=cache::$(make go.cachedir)"
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v4
@@ -78,23 +100,23 @@ jobs:
       # We could run 'make lint' but we prefer this action because it leaves
       # 'annotations' (i.e. it comments on PRs to point out linter violations).
       - name: Lint
-        uses: golangci/golangci-lint-action@3cfe3a4abbb849e10058ce4af15d205b6da42804 # v4
+        uses: golangci/golangci-lint-action@v6
         with:
           version: ${{ env.GOLANGCI_VERSION }}
 
   check-diff:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
           submodules: true
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -103,7 +125,7 @@ jobs:
 
       - name: Find the Go Build Cache
         id: go
-        run: echo "::set-output name=cache::$(make go.cachedir)"
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v4
@@ -126,13 +148,13 @@ jobs:
         run: make check-diff
 
   unit-tests:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
           submodules: true
 
@@ -140,13 +162,13 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
         id: go
-        run: echo "::set-output name=cache::$(make go.cachedir)"
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v4
@@ -169,25 +191,74 @@ jobs:
         run: make -j2 test
 
       - name: Publish Unit Test Coverage
-        uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4
+        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
         with:
           flags: unittests
           file: _output/tests/linux_amd64/coverage.txt
 
-  publish-artifacts:
-    permissions: write-all
-    runs-on: ubuntu-22.04
+  local-deploy:
+    runs-on: ubuntu-24.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        with:
+          submodules: true
+
+      - name: Fetch History
+        run: git fetch --prune --unshallow
+
+      - name: Setup Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Find the Go Build Cache
+        id: go
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+
+      - name: Cache the Go Build Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.go.outputs.cache }}
+          key: ${{ runner.os }}-build-unit-tests-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-build-unit-tests-
+
+      - name: Cache Go Dependencies
+        uses: actions/cache@v4
+        with:
+          path: .work/pkg
+          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Vendor Dependencies
+        run: make vendor vendor.check
+
+      - name: Deploying locally built provider package
+        run: make local-deploy
+
+  publish-artifacts:
+    permissions: write-all
+    runs-on: ubuntu-24.04
+    needs:
+      - detect-noop
+      - report-breaking-changes
+      - lint
+      - check-diff
+      - unit-tests
+      - local-deploy
+    if: needs.detect-noop.outputs.noop != 'true'
+
+    steps:
       - name: Setup QEMU
-        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3
         with:
           platforms: all
 
       - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@2b51285047da1547ffb1b2203d8be4c0af6b1f20 # v3
+        uses: docker/setup-buildx-action@v3
         with:
           version: ${{ env.DOCKER_BUILDX_VERSION }}
           install: true
@@ -199,8 +270,16 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Login to Upbound
+        uses: docker/login-action@v3
+        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+        with:
+          registry: xpkg.upbound.io
+          username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+          password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
         with:
           submodules: true
 
@@ -208,13 +287,13 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
         id: go
-        run: echo "::set-output name=cache::$(make go.cachedir)"
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v4
@@ -234,52 +313,22 @@ jobs:
         run: make vendor vendor.check
 
       - name: Build Artifacts
-        run: |-
-          make -j XPKG_REG_ORGS="${{ env.CROSSPLANE_REGORG }}" XPKG_REG_ORGS_NO_PROMOTE="${{ env.CROSSPLANE_REGORG }}" BRANCH_NAME="main" ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} build.all
+        run: make -j2 build.all
         env:
           # We're using docker buildx, which doesn't actually load the images it
           # builds by default. Specifying --load does so.
           BUILD_ARGS: "--load"
 
-      - name: Publish Artifacts to GitHub
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4
+      - name: Upload Artifacts to GitHub
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4
         with:
           name: output
           path: _output/**
 
-      - name: Publish Artifacts
+      - name: Publish Artifacts to GitHub
         run: |-
           make -j2 XPKG_REG_ORGS="${{ env.CROSSPLANE_REGORG }}" XPKG_REG_ORGS_NO_PROMOTE="${{ env.CROSSPLANE_REGORG }}" BRANCH_NAME="main" ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} publish
 
-  mirror-to-xpkg-upbound-io:
-    needs: publish-artifacts
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
-        with:
-          platforms: all
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@885d1462b80bc1c1c7f0b00334ad271f09369c55 # v2
-        with:
-          version: ${{ env.DOCKER_BUILDX_VERSION }}
-          install: true
-
-      - name: Setup crane
-        # crane will inherit credentials from `docker login`
-        uses: imjasonh/setup-crane@v0.4
-
-      - name: Validate crane installation
-        run: crane version
-
-      - name: Login to Upbound
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d
-        with:
-          registry: "xpkg.upbound.io"
-          username: ${{ secrets.XPKG_ACCESS_ID }}
-          password: ${{ secrets.XPKG_TOKEN }}
-
-      - name: Mirror to xpkg.upbound.io
-        run: |
-          crane copy ${{ env.CROSSPLANE_REGORG }}/${{ env.PROVIDER_REPO }}:${{ inputs.version }} ${{ env.UPBOUND_REGORG }}/${{ env.PROVIDER_REPO }}:${{ inputs.version }} --allow-nondistributable-artifacts
+      - name: Publish Artifacts Upbound
+        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+        run: make publish BRANCH_NAME=${GITHUB_REF##*/}
