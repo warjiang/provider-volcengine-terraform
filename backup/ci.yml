@@ -328,3 +328,7 @@ jobs:
       - name: Publish Artifacts to GitHub
         run: |-
           make -j2 XPKG_REG_ORGS="${{ env.CROSSPLANE_REGORG }}" XPKG_REG_ORGS_NO_PROMOTE="${{ env.CROSSPLANE_REGORG }}" BRANCH_NAME="main" ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} publish
+
+      - name: Publish Artifacts Upbound
+        if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
+        run: make publish BRANCH_NAME=${GITHUB_REF##*/}
