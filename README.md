@@ -16,12 +16,25 @@ up ctp provider install warjiang/provider-volcengine-terraform:v0.1.0
 Alternatively, you can use declarative installation:
 ```
 cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: ControllerConfig
+metadata:
+  name: volcengine-terraform-config
+  labels:
+    app: provider-volcengine-terraform
+spec:
+  args: ["-d"]
+  image: ghcr.io/warjiang/provider-volcengine-terraform:v0.1.4
+---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
   name: provider-volcengine-terraform
 spec:
-  package: warjiang/provider-volcengine-terraform:v0.1.0
+  package: xpkg.upbound.io/warjiang/provider-volcengine-terraform:v0.1.1
+  controllerConfigRef:
+    name: volcengine-terraform-config
+
 EOF
 ```
 
@@ -52,6 +65,13 @@ Build binary:
 
 ```console
 make build
+```
+
+Build & Push xpkg:
+```console
+crossplane xpkg build --package-root=package/
+crossplane xpkg login --token={your upbound token}
+crossplane xpkg push xpkg.upbound.io/warjiang/provider-volcengine-terraform:v0.1.0 -f ./package/provider-volcengine-terraform-684452faf24b.xpkg
 ```
 
 ## Report a Bug
