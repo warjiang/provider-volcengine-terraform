@@ -11,6 +11,7 @@ on:
         required: true
 
 jobs:
+  permissions: write-all
   tag:
     uses: upbound/official-providers-ci/.github/workflows/provider-tag.yml@standard-runners
     with:
